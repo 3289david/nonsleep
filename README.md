@@ -13,7 +13,7 @@ brew install nonsleep
 Or build from source:
 
 ```bash
-git clone https://github.com/danwoo/nonsleep.git
+git clone https://github.com/3289david/nonsleep.git
 cd nonsleep
 make install
 ```

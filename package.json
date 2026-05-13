@@ -2,10 +2,10 @@
   "name": "nonsleep",
   "version": "1.0.0",
   "description": "Prevent macOS from sleeping when the lid is closed.",
-  "homepage": "https://github.com/danwoo/nonsleep",
+  "homepage": "https://github.com/3289david/nonsleep",
   "repository": {
     "type": "git",
-    "url": "https://github.com/danwoo/nonsleep.git"
+    "url": "https://github.com/3289david/nonsleep.git"
   },
   "license": "MIT",
   "author": "danwoo",
