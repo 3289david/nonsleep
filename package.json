@@ -1,0 +1,25 @@
+{
+  "name": "nonsleep",
+  "version": "1.0.0",
+  "description": "Prevent macOS from sleeping when the lid is closed.",
+  "homepage": "https://github.com/danwoo/nonsleep",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danwoo/nonsleep.git"
+  },
+  "license": "MIT",
+  "author": "danwoo",
+  "os": ["darwin"],
+  "keywords": [
+    "macos",
+    "sleep",
+    "lid",
+    "clamshell",
+    "prevent-sleep",
+    "caffeine",
+    "menu-bar"
+  ],
+  "scripts": {
+    "postinstall": "echo 'NonSleep requires macOS. Build with: make install'"
+  }
+}

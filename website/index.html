@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NonSleep — Keep Your Mac Awake</title>
+  <meta name="description" content="Prevent macOS from sleeping when the lid is closed. Tiny, invisible, native.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --fg: #e5e5e5;
+      --muted: #737373;
+      --accent: #22c55e;
+      --code-bg: #171717;
+      --border: #262626;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    header {
+      padding: 80px 0 48px;
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .install-section {
+      padding: 48px 0;
+      text-align: center;
+    }
+
+    .install-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 15px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      position: relative;
+    }
+
+    .install-box:hover {
+      border-color: var(--accent);
+    }
+
+    .install-box .prompt {
+      color: var(--accent);
+      user-select: none;
+    }
+
+    .install-box .copy-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .install-box .copy-btn:hover {
+      color: var(--fg);
+    }
+
+    .features {
+      padding: 32px 0 64px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .feature {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .feature-icon {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .feature h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .feature p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .usage {
+      padding: 32px 0;
+    }
+
+    .usage h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.8;
+      overflow-x: auto;
+      margin-bottom: 24px;
+    }
+
+    .code-block .comment {
+      color: var(--muted);
+    }
+
+    .code-block .cmd {
+      color: var(--accent);
+    }
+
+    .status-demo {
+      padding: 32px 0;
+      text-align: center;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      user-select: none;
+    }
+
+    .status-pill .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      transition: background 0.3s;
+    }
+
+    .status-pill.off .dot {
+      background: var(--muted);
+    }
+
+    .status-pill.off {
+      color: var(--muted);
+    }
+
+    footer {
+      padding: 48px 0;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      margin-top: 48px;
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    footer a:hover {
+      color: var(--fg);
+    }
+
+    footer .links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+
+    footer .copy {
+      font-size: 13px;
+      color: #404040;
+    }
+
+    @media (max-width: 480px) {
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        padding: 48px 0 32px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">🌙</div>
+      <h1>NonSleep</h1>
+      <p class="tagline">Keep your Mac awake with the lid closed.</p>
+    </header>
+
+    <section class="install-section">
+      <div class="install-box" onclick="copyInstall()">
+        <span class="prompt">$</span>
+        <span>brew install nonsleep</span>
+        <button class="copy-btn" id="copyBtn" title="Copy">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="5" y="5" width="9" height="9" rx="1.5"/>
+            <path d="M3 11V3a1 1 0 011-1h8"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <section class="status-demo">
+      <div class="status-pill" id="statusPill" onclick="toggleStatus()">
+        <span class="dot"></span>
+        <span id="statusText">NonSleep: ON</span>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature-grid">
+        <div class="feature">
+          <div class="feature-icon">&#9678;</div>
+          <h3>Menu Bar</h3>
+          <p>One-click toggle from your menu bar. Nothing more.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#9000;</div>
+          <h3>CLI</h3>
+          <p>Full terminal control. <code>nonsleep</code>, <code>nonsleep stop</code>, done.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#9789;</div>
+          <h3>Lid-Aware</h3>
+          <p>Detects lid close. Sleeps display, keeps system alive.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">&#9881;</div>
+          <h3>Native</h3>
+          <p>Pure Swift + IOKit. Near-zero memory. No Electron.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="usage">
+      <h2>Usage</h2>
+      <div class="code-block">
+        <span class="comment"># Enable sleep prevention</span><br>
+        <span class="cmd">nonsleep</span><br><br>
+        <span class="comment"># Disable</span><br>
+        <span class="cmd">nonsleep stop</span><br><br>
+        <span class="comment"># Check status</span><br>
+        <span class="cmd">nonsleep status</span><br><br>
+        <span class="comment"># Toggle</span><br>
+        <span class="cmd">nonsleep toggle</span><br><br>
+        <span class="comment"># Temporary — 2 hours</span><br>
+        <span class="cmd">nonsleep for 2h</span>
+      </div>
+
+      <h2>Build from Source</h2>
+      <div class="code-block">
+        <span class="cmd">git clone https://github.com/danwoo/nonsleep.git</span><br>
+        <span class="cmd">cd nonsleep</span><br>
+        <span class="cmd">make install</span>
+      </div>
+    </section>
+
+    <footer>
+      <div class="links">
+        <a href="https://github.com/danwoo/nonsleep">GitHub</a>
+        <a href="https://github.com/danwoo/nonsleep/releases">Releases</a>
+        <a href="https://www.npmjs.com/package/nonsleep">npm</a>
+      </div>
+      <p class="copy">MIT License</p>
+    </footer>
+  </div>
+
+  <script>
+    function copyInstall() {
+      navigator.clipboard.writeText('brew install nonsleep');
+      const btn = document.getElementById('copyBtn');
+      btn.innerHTML = '&#10003;';
+      setTimeout(() => {
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 011-1h8"/></svg>';
+      }, 2000);
+    }
+
+    function toggleStatus() {
+      const pill = document.getElementById('statusPill');
+      const text = document.getElementById('statusText');
+      pill.classList.toggle('off');
+      text.textContent = pill.classList.contains('off') ? 'NonSleep: OFF' : 'NonSleep: ON';
+    }
+  </script>
+</body>
+</html>
