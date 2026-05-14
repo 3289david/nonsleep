@@ -7,6 +7,7 @@ struct NonSleepApp: App {
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()
+                .environmentObject(appDelegate)
         } label: {
             Image(systemName: appDelegate.isEnabled ? "moon.zzz.fill" : "moon.zzz")
                 .symbolRenderingMode(.hierarchical)
