@@ -7,3 +7,5 @@ DerivedData/
 *.dSYM
 .DS_Store
 node_modules/
+dist/
+assets/NonSleep.iconset/

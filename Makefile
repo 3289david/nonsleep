@@ -2,7 +2,7 @@ PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
 PLISTDIR = $(HOME)/Library/LaunchAgents
 
-.PHONY: build install uninstall clean
+.PHONY: build install uninstall clean dmg app
 
 build:
 	swift build -c release
@@ -21,6 +21,11 @@ uninstall:
 	rm -f $(PLISTDIR)/com.nonsleep.daemon.plist
 	rm -rf $(HOME)/Library/Application\ Support/NonSleep
 
+app: build
+	@scripts/build-dmg.sh
+
+dmg: app
+
 clean:
 	swift package clean
-	rm -rf .build
+	rm -rf .build dist
