@@ -15,25 +15,40 @@ struct NonSleepCLI: ParsableCommand {
 
 struct Enable: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Enable sleep prevention."
+        abstract: "Enable sleep prevention (foreground, holds assertion)."
     )
 
     func run() {
-        let controller = NonSleepController.shared
-        controller.enable()
+        StateManager.shared.enable()
+        let power = PowerManager.shared
+        power.preventSleep()
+
         print("● NonSleep enabled")
+        print("  Sleep prevention active. Press Ctrl+C to stop.")
+        print("  Verify: pmset -g assertions | grep NonSleep")
+
+        let lid = LidWatcher.shared
+        lid.onLidStateChanged = { state in
+            switch state {
+            case .closed:
+                power.sleepDisplay()
+            case .open:
+                power.wakeDisplay()
+            }
+        }
+        lid.start()
 
         signal(SIGINT, SIG_IGN)
         let source = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
         source.setEventHandler {
-            controller.disable()
+            lid.stop()
+            power.allowSleep()
+            StateManager.shared.disable()
             print("\n○ NonSleep disabled")
             Foundation.exit(0)
         }
         source.resume()
 
-        controller.start()
-        print("  Sleep prevention active. Press Ctrl+C to stop.")
         dispatchMain()
     }
 }
@@ -44,8 +59,9 @@ struct Stop: ParsableCommand {
     )
 
     func run() {
-        NonSleepController.shared.disable()
+        StateManager.shared.disable()
         print("○ NonSleep disabled")
+        print("  (state written — daemon/app will release assertion)")
     }
 }
 
@@ -68,21 +84,34 @@ struct Status: ParsableCommand {
             let formatter = RelativeDateTimeFormatter()
             formatter.unitsStyle = .full
             let relative = formatter.localizedString(for: until, relativeTo: Date())
-            print("  Temporary: expires \(relative)")
+            print("  Timer: expires \(relative)")
         }
 
         print("  Lid: \(lid == .open ? "open" : "closed")")
+
+        let pipe = Pipe()
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        task.arguments = ["-g", "assertions"]
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+        try? task.run()
+        task.waitUntilExit()
+        let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        let hasAssertion = output.contains("NonSleep")
+        print("  Assertion: \(hasAssertion ? "ACTIVE" : "none")")
     }
 }
 
 struct Toggle: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Toggle sleep prevention."
+        abstract: "Toggle sleep prevention state."
     )
 
     func run() {
-        let enabled = NonSleepController.shared.toggle()
+        let enabled = StateManager.shared.toggle()
         print(enabled ? "● NonSleep: ON" : "○ NonSleep: OFF")
+        print("  (state written — daemon/app will sync)")
     }
 }
 
@@ -102,28 +131,46 @@ struct Temporary: ParsableCommand {
             throw ExitCode.failure
         }
 
-        let controller = NonSleepController.shared
-        controller.enableTemporary(hours: hours)
-
         let minutes = Int(hours * 60)
+        StateManager.shared.enableTemporary(duration: hours * 3600)
+        let power = PowerManager.shared
+        power.preventSleep()
+
         if minutes >= 60 {
             print("● NonSleep enabled for \(minutes / 60)h \(minutes % 60)m")
         } else {
             print("● NonSleep enabled for \(minutes)m")
         }
+        print("  Press Ctrl+C to stop early.")
 
-        controller.start()
+        let lid = LidWatcher.shared
+        lid.onLidStateChanged = { state in
+            switch state {
+            case .closed: power.sleepDisplay()
+            case .open: power.wakeDisplay()
+            }
+        }
+        lid.start()
+
+        DispatchQueue.global().asyncAfter(deadline: .now() + hours * 3600) {
+            lid.stop()
+            power.allowSleep()
+            StateManager.shared.disable()
+            print("\n○ NonSleep: timer expired")
+            Foundation.exit(0)
+        }
 
         signal(SIGINT, SIG_IGN)
         let source = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
         source.setEventHandler {
-            controller.disable()
+            lid.stop()
+            power.allowSleep()
+            StateManager.shared.disable()
             print("\n○ NonSleep disabled")
             Foundation.exit(0)
         }
         source.resume()
 
-        print("  Press Ctrl+C to stop early.")
         dispatchMain()
     }
 

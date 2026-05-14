@@ -9,8 +9,11 @@ struct NonSleepApp: App {
             MenuBarView()
                 .environmentObject(appDelegate)
         } label: {
-            Image(systemName: appDelegate.isEnabled ? "moon.zzz.fill" : "moon.zzz")
-                .symbolRenderingMode(.hierarchical)
+            HStack(spacing: 4) {
+                Image(systemName: appDelegate.isEnabled
+                    ? "bolt.horizontal.circle.fill"
+                    : "moon.zzz")
+            }
         }
 
         Settings {

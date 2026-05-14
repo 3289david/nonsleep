@@ -4,37 +4,27 @@ struct MenuBarView: View {
     @EnvironmentObject private var appDelegate: AppDelegate
 
     var body: some View {
-        VStack(spacing: 0) {
-            Button {
-                appDelegate.toggle()
-            } label: {
-                HStack {
-                    Image(systemName: appDelegate.isEnabled ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(appDelegate.isEnabled ? .green : .secondary)
-                    Text("Disable Sleep")
-                    Spacer()
-                    Text(appDelegate.isEnabled ? "ON" : "OFF")
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                }
+        Button {
+            appDelegate.toggle()
+        } label: {
+            HStack {
+                Image(systemName: appDelegate.isEnabled ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(appDelegate.isEnabled ? .green : .secondary)
+                Text("Prevent Sleep")
+                Spacer()
+                Text(appDelegate.isEnabled ? "ON" : "OFF")
+                    .foregroundStyle(appDelegate.isEnabled ? .green : .secondary)
+                    .font(.system(.caption, design: .monospaced, weight: .bold))
             }
-            .keyboardShortcut("d")
-
-            Divider()
-
-            Button("Settings...") {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                NSApp.activate(ignoringOtherApps: true)
-            }
-            .keyboardShortcut(",")
-
-            Divider()
-
-            Button("Quit NonSleep") {
-                appDelegate.disable()
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q")
         }
+        .keyboardShortcut("d")
+
+        Divider()
+
+        Button("Quit") {
+            appDelegate.disable()
+            NSApplication.shared.terminate(nil)
+        }
+        .keyboardShortcut("q")
     }
 }
