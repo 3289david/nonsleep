@@ -1,7 +1,7 @@
 class Nonsleep < Formula
   desc "Prevent macOS from sleeping when the lid is closed"
   homepage "https://github.com/3289david/nonsleep"
-  url "https://github.com/3289david/nonsleep/archive/refs/tags/v1.0.0.tar.gz"
+  url "https://github.com/3289david/nonsleep/archive/refs/tags/v1.1.0.tar.gz"
   sha256 "3bbf9e1173eff6febaa2636b988ea4f8b4a2add45f4fbd2ee9af323dfd8eb265"
   license "MIT"
 
