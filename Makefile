@@ -5,7 +5,7 @@ PLISTDIR = $(HOME)/Library/LaunchAgents
 .PHONY: build install uninstall clean dmg app
 
 build:
-	swift build -c release
+	swift build -c release --arch arm64 --arch x86_64
 
 install: build
 	install -d $(BINDIR)

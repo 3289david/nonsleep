@@ -9,7 +9,8 @@ class Nonsleep < Formula
   depends_on :macos
 
   def install
-    system "swift", "build", "-c", "release", "--disable-sandbox"
+    system "swift", "build", "-c", "release", "--disable-sandbox",
+           "--arch", "arm64", "--arch", "x86_64"
     bin.install ".build/release/nonsleep"
     bin.install ".build/release/nonsleepd"
   end
