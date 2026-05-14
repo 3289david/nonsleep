@@ -1,5 +1,7 @@
 # NonSleep
 
+<a href="https://3289david.github.io/nonsleep">https://img.shields.io/badge/Website-Github%20Pages-20B2AA?style=for-the-badge<a/>
+
 Prevent macOS from sleeping when the lid is closed.
 
 Tiny. Invisible. Native.
