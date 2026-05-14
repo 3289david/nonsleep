@@ -7,14 +7,7 @@ struct NonSleepDaemon {
         let controller = NonSleepController.shared
         controller.start()
 
-        let stateURL = StateManager.stateFileURL
-        let watcher = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: open(stateURL.path, O_EVTONLY),
-            eventMask: .write,
-            queue: .main
-        )
-
-        watcher.setEventHandler {
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             let state = StateManager.shared.read()
             if state.enabled {
                 if !PowerManager.shared.isSleepPrevented {
@@ -26,7 +19,6 @@ struct NonSleepDaemon {
                 }
             }
         }
-        watcher.resume()
 
         signal(SIGTERM, SIG_IGN)
         let sigterm = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)

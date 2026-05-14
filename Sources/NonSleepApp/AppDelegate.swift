@@ -6,24 +6,22 @@ import IOKit.pwr_mgt
 final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @Published var isEnabled: Bool = false
 
-    private var assertionID: IOPMAssertionID = 0
-    private var hasAssertion = false
-    private var stateFileDescriptor: Int32 = -1
-    private var fileWatcher: DispatchSourceFileSystemObject?
+    private var systemAssertionID: IOPMAssertionID = 0
+    private var idleAssertionID: IOPMAssertionID = 0
+    private var hasSystemAssertion = false
+    private var hasIdleAssertion = false
+    private var pollTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         ensureStateDir()
         loadState()
         syncAssertion()
-        watchStateFile()
+        startPolling()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        releaseAssertion()
-        fileWatcher?.cancel()
-        if stateFileDescriptor >= 0 {
-            Darwin.close(stateFileDescriptor)
-        }
+        pollTimer?.invalidate()
+        releaseAllAssertions()
     }
 
     // MARK: - Toggle
@@ -46,34 +44,69 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         syncAssertion()
     }
 
-    // MARK: - IOKit Power Assertion
+    // MARK: - Polling (reliable sync with CLI/daemon)
+
+    private func startPolling() {
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.checkStateFile()
+        }
+    }
+
+    private func checkStateFile() {
+        let url = stateFileURL()
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url),
+              let state = try? JSONDecoder().decode(AppState.self, from: data) else { return }
+
+        if state.enabled != isEnabled {
+            isEnabled = state.enabled
+            syncAssertion()
+        }
+    }
+
+    // MARK: - IOKit Power Assertions
 
     private func syncAssertion() {
         if isEnabled {
-            createAssertion()
+            createAssertions()
         } else {
-            releaseAssertion()
+            releaseAllAssertions()
         }
     }
 
-    private func createAssertion() {
-        guard !hasAssertion else { return }
-        let result = IOPMAssertionCreateWithName(
-            kIOPMAssertPreventUserIdleSystemSleep as CFString,
-            IOPMAssertionLevel(kIOPMAssertionLevelOn),
-            "NonSleep: Preventing system sleep" as CFString,
-            &assertionID
-        )
-        if result == kIOReturnSuccess {
-            hasAssertion = true
+    private func createAssertions() {
+        if !hasSystemAssertion {
+            let r1 = IOPMAssertionCreateWithName(
+                "PreventSystemSleep" as CFString,
+                IOPMAssertionLevel(kIOPMAssertionLevelOn),
+                "NonSleep: Preventing clamshell sleep" as CFString,
+                &systemAssertionID
+            )
+            if r1 == kIOReturnSuccess { hasSystemAssertion = true }
+        }
+
+        if !hasIdleAssertion {
+            let r2 = IOPMAssertionCreateWithName(
+                kIOPMAssertPreventUserIdleSystemSleep as CFString,
+                IOPMAssertionLevel(kIOPMAssertionLevelOn),
+                "NonSleep: Preventing idle sleep" as CFString,
+                &idleAssertionID
+            )
+            if r2 == kIOReturnSuccess { hasIdleAssertion = true }
         }
     }
 
-    private func releaseAssertion() {
-        guard hasAssertion else { return }
-        IOPMAssertionRelease(assertionID)
-        hasAssertion = false
-        assertionID = 0
+    private func releaseAllAssertions() {
+        if hasSystemAssertion {
+            IOPMAssertionRelease(systemAssertionID)
+            hasSystemAssertion = false
+            systemAssertionID = 0
+        }
+        if hasIdleAssertion {
+            IOPMAssertionRelease(idleAssertionID)
+            hasIdleAssertion = false
+            idleAssertionID = 0
+        }
     }
 
     // MARK: - State File
@@ -102,37 +135,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         encoder.outputFormatting = .prettyPrinted
         guard let data = try? encoder.encode(state) else { return }
         try? data.write(to: stateFileURL(), options: .atomic)
-    }
-
-    private func watchStateFile() {
-        let url = stateFileURL()
-        if !FileManager.default.fileExists(atPath: url.path) {
-            saveState()
-        }
-
-        stateFileDescriptor = open(url.path, O_EVTONLY)
-        guard stateFileDescriptor >= 0 else { return }
-
-        fileWatcher = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: stateFileDescriptor,
-            eventMask: [.write, .rename],
-            queue: .main
-        )
-        fileWatcher?.setEventHandler { [weak self] in
-            guard let self else { return }
-            let old = self.isEnabled
-            self.loadState()
-            if self.isEnabled != old {
-                self.syncAssertion()
-            }
-        }
-        fileWatcher?.setCancelHandler { [weak self] in
-            if let fd = self?.stateFileDescriptor, fd >= 0 {
-                Darwin.close(fd)
-                self?.stateFileDescriptor = -1
-            }
-        }
-        fileWatcher?.resume()
     }
 
     private func stateFileURL() -> URL {

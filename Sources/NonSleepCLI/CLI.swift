@@ -7,7 +7,7 @@ struct NonSleepCLI: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "nonsleep",
         abstract: "Prevent macOS from sleeping when the lid is closed.",
-        version: "1.2.0",
+        version: "1.3.0",
         subcommands: [Enable.self, Stop.self, Status.self, Toggle.self, Temporary.self],
         defaultSubcommand: Enable.self
     )
